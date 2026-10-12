@@ -161,6 +161,8 @@ body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;b
 <input type="file" id="cubeIn" accept=".cube" class="hidden"/>
 <div id="sheetRoot"></div>
 <script>
+// DEBUG: show errors on page
+window.onerror=function(m,s,l,c,e){var d=document.getElementById('errD');if(!d){d=document.createElement('div');d.id='errD';d.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff3b30;color:#fff;padding:10px;font-size:12px;z-index:9999;white-space:pre-wrap';document.body.appendChild(d);}d.textContent='ERR: '+m+' @'+l+':'+c;return false;};
 "use strict";
 /* ============ helpers ============ */
 const $=id=>document.getElementById(id);
@@ -619,6 +621,7 @@ const blob=new Blob([mx.target.buffer],{type:'video/mp4'});const u=URL.createObj
 $('expDl').innerHTML='<a href="'+u+'" download="reshi-'+Date.now()+'.mp4" class="bigbtn" style="display:block;text-align:center;text-decoration:none">⬇ Download ('+(blob.size/1048576).toFixed(1)+' MB)</a>';
 $('expMsg').textContent='Done ✓'}finally{S.playhead=sv;drawPreview()}}
 /* ============ wire up ============ */
+try{
 $('newBtn').onclick=()=>{const n=prompt('Project name:','My Video');if(n===null)return;
 S.project=Project.create(n);Project.cur=S.project;S.playhead=0;S.selectedClip=null;
 $('home').classList.add('hidden');$('editor').classList.remove('hidden');$('eName').textContent=n;$('fileIn').click()};
@@ -633,6 +636,7 @@ $('cubeIn').onchange=e=>{const f=e.target.files[0];if(f)importLut(f);e.target.va
 $('scopesB').onclick=()=>{S.scopeOn=!S.scopeOn;$('scopesB').style.background=S.scopeOn?'var(--acc)':'rgba(0,0,0,.55)';alert(S.scopeOn?'Scopes: histogram overlay coming in next build':'Scopes off')};
 $('cmpB').onclick=()=>{S.cmpOn=!S.cmpOn;$('cmpB').style.background=S.cmpOn?'var(--acc)':'rgba(0,0,0,.55)';drawPreview()};
 $('aspBtn').onclick=()=>alert('Aspect: Original (more ratios in next build)');
+}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#ff3b30;color:#fff;padding:10px;z-index:9999';d.textContent='WIRE ERR: '+e.message;document.body.appendChild(d);}
 /* ============ init ============ */
 (async function(){await DB.open();regBuiltins();initPreview();renderHome();
 const loop=()=>{if(S.project&&$('editor').classList.contains('hidden')===false)drawPreview();requestAnimationFrame(loop)};loop()})();}
