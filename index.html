@@ -485,7 +485,19 @@ function drawPreview(){
     if(ready){
       try{
         gl.bindTexture(gl.TEXTURE_2D,gl.tex);
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
+        let texSrc=src;
+        // For videos, draw to 2D canvas first (more reliable)
+        if(mc.kind==='video'){
+          if(!mc._cv){ mc._cv=document.createElement('canvas'); }
+          const vw=src.videoWidth, vh=src.videoHeight;
+          if(vw&&vh){
+            if(mc._cv.width!==vw||mc._cv.height!==vh){ mc._cv.width=vw; mc._cv.height=vh; }
+            const c2=mc._cv.getContext('2d');
+            c2.drawImage(src,0,0,vw,vh);
+            texSrc=mc._cv;
+          }
+        }
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,texSrc);
         // draw text overlays
         gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
         drawTexts(cur);
