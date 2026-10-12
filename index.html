@@ -561,8 +561,7 @@ const show=n=>{const el=$('csBody');
 if(n==='Looks')showLooks();else if(n==='Film')showFilm();else if(n==='Grade')showGrade();else if(n==='Warper')showWarper();else if(n==='Relight')showRelight();
 else if(n==='Volume'){el.innerHTML=sRow('Volume','aVol',0,200,1,Math.round((S.selectedClip?S.selectedClip.volume||1:1)*100),v=>v+'%');
 $('aVol').oninput=e=>{if(S.selectedClip){S.selectedClip.volume=e.target.value/100;pushU()}};$('aVol').onchange=()=>Project.save()}
-else if(n==='Text'){el.innerHTML='<button class="btn" id="tAdd">Add Text</button>';$('tAdd').onclick=()=>{const c=S.selectedClip;if(!c)return;pushU();c.text=c.text||[];c.text.push({txt:'Title',size:32,x:50,y:50,color:'#fff'});drawPreview();Project.save()}}
-else el.innerHTML='<p class="help">Audio: use Volume above. Overlay: coming soon.</p>'};
+else el.innerHTML='<p class="help">Coming soon in this build.</p>'};
 b.querySelectorAll('[data-cs]').forEach(x=>x.onclick=()=>{b.querySelectorAll('[data-cs]').forEach(y=>y.classList.remove('on'));x.classList.add('on');show(x.dataset.cs)});
 show((names[t]||[])[0])}
 /* ============ edit tools ============ */
