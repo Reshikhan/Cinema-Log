@@ -198,10 +198,12 @@ function renderLoop(){
     }
     gl.viewport(0,0,cv.width,cv.height);
     gl.useProgram(prog);
-    // video
+    // video (flip Y: video top-left -> GL bottom-left)
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D,gl.vTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,v);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
     gl.uniform1i(gl.getUniformLocation(prog,'uV'),0);
     // lut
     gl.activeTexture(gl.TEXTURE1);
