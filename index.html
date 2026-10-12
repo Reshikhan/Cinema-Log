@@ -518,7 +518,12 @@ function handleFiles(files){
     if(kind==='video'){
       const v=document.createElement('video');
       v.src=url; v.muted=true; v.playsInline=true; v.preload='auto';
-      v.onloadedmetadata=()=>{ clip.dur=v.duration||5; mc.videoEl=v; buildTimeline(); updateDur(); };
+      v.onloadedmetadata=()=>{ clip.dur=v.duration||5; };
+      v.oncanplay=()=>{ mc.videoEl=v; 
+        // seek to first frame to ensure data
+        try{ v.currentTime=0.1; }catch(e){}
+        buildTimeline(); updateDur(); drawPreview();
+      };
       mc.videoEl=v;
     } else {
       const im=new Image();
