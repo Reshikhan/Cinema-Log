@@ -619,7 +619,24 @@ const blob=new Blob([mx.target.buffer],{type:'video/mp4'});const u=URL.createObj
 $('expDl').innerHTML='<a href="'+u+'" download="reshi-'+Date.now()+'.mp4" class="bigbtn" style="display:block;text-align:center;text-decoration:none">⬇ Download ('+(blob.size/1048576).toFixed(1)+' MB)</a>';
 $('expMsg').textContent='Done ✓'}finally{S.playhead=sv;drawPreview()}}
 /* ============ wire up ============ */
-$('newBtn').onclick=()=>{const n=prompt('Project name:','My Video');if(n===null)return;
+$('newBtn').onclick=()=>{
+// In-page modal instead of native prompt (works everywhere)
+let m=$('npModal');
+if(!m){
+m=document.createElement('div');
+m.id='npModal';
+m.innerHTML='<div style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px"><div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.2)"><h3 style="margin:0 0 16px;font-size:18px">New Project</h3><input id="npName" placeholder="My Video" style="width:100%;padding:12px;border:1px solid #e5e5ea;border-radius:10px;font-size:16px;margin-bottom:16px;box-sizing:border-box"/><div style="display:flex;gap:10px"><button id="npCancel" style="flex:1;padding:12px;border:1px solid #e5e5ea;background:#f2f2f7;border-radius:10px;font-size:16px">Cancel</button><button id="npCreate" style="flex:1;padding:12px;border:none;background:#007aff;color:#fff;border-radius:10px;font-size:16px;font-weight:600">Create</button></div></div></div>';
+document.body.appendChild(m);
+$('npCancel').onclick=()=>m.remove();
+$('npCreate').onclick=()=>{
+const n=$('npName').value.trim()||'My Video';
+m.remove();
+S.project=Project.create(n);Project.cur=S.project;S.playhead=0;S.selectedClip=null;
+$('home').classList.add('hidden');$('editor').classList.remove('hidden');$('eName').textContent=n;$('fileIn').click()};
+setTimeout(()=>$('npName').focus(),100);
+return;
+}
+const n='__modal__';if(n===null)return;
 S.project=Project.create(n);Project.cur=S.project;S.playhead=0;S.selectedClip=null;
 $('home').classList.add('hidden');$('editor').classList.remove('hidden');$('eName').textContent=n;$('fileIn').click()};
 $('recBtn').onclick=()=>alert('Recorder: use your camera app, then import the video via ＋ in the timeline');
