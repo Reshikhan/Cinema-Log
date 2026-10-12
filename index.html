@@ -627,7 +627,43 @@ function pushUndo(){
   if(S.undoStack.length>30)S.undoStack.shift();
   S.redoStack=[];
 }
-function togglePlay(){ /* simplified: preview current frame */ drawPreview(); }
+let playTimer=null,lastPlayT=0;
+function togglePlay(){
+  if(playTimer){ // pause
+    clearInterval(playTimer); playTimer=null;
+    $('playBtn').textContent='▶ Play';
+    try{previewVideo.pause();}catch(e){}
+    return;
+  }
+  // play
+  if(!S.project||!S.project.tracks.video.length){alert('Add a video to the timeline first.');return;}
+  const total=tlDuration();
+  if(S.playhead>=total-0.05)S.playhead=0;
+  $('playBtn').textContent='⏸ Pause';
+  lastPlayT=performance.now();
+  // Start the video element playing (for audio sync and frame data)
+  const clip=S.project.tracks.video.find(c=>S.playhead>=c.start&&S.playhead<c.start+c.dur);
+  if(clip){
+    const m=S.project.media.find(x=>x.id===clip.mediaId);
+    if(m&&m.type==='video'){
+      if(previewVideo.src!==m.url){previewVideo.src=m.url;previewVideo.muted=false;}
+      previewVideo.currentTime=Math.min(clip.trimS+(S.playhead-clip.start),m.duration-0.05);
+      previewVideo.play().catch(()=>{});
+    }
+  }
+  playTimer=setInterval(()=>{
+    const now=performance.now();
+    const dt=(now-lastPlayT)/1000; lastPlayT=now;
+    S.playhead+=dt;
+    if(S.playhead>=total){
+      S.playhead=total;
+      clearInterval(playTimer); playTimer=null;
+      $('playBtn').textContent='▶ Play';
+      try{previewVideo.pause();}catch(e){}
+    }
+    updatePlayhead();
+  },33);
+}
 
 /* ---------- Advanced Color ---------- */
 let curvesDirty=true;
@@ -875,6 +911,7 @@ function refreshAdvancedUI(){
 /* ---------- Preview (WebGL) ---------- */
 let gl,texV,texL,texC,U={},glReady=false;
 let previewVideo=document.createElement('video');
+previewVideo.muted=true; previewVideo.playsInline=true; previewVideo.preload='auto';
 
 function initPreview(){
   const cv=$('preview');
