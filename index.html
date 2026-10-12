@@ -74,11 +74,40 @@
     border-radius:8px; padding:10px; font-size:.95rem}
   #prog{height:8px; background:var(--bg2); border-radius:4px; overflow:hidden; margin:12px 0; display:none}
   #progBar{height:100%; width:0%; background:linear-gradient(90deg,#8b5cf6,#ec4899); transition:width .2s}
+  .tgl.on{border-color:var(--acc); background:#2a1f4d}
   .hidden{display:none!important}
   @media(max-width:768px){
     .wrap{padding:0 12px 40px}
     header h1{font-size:1.3rem}
   }
+
+  /* Recorder */
+  #recOverlay{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column}
+  #recTop{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(0,0,0,.65);z-index:3}
+  #recDot{width:12px;height:12px;border-radius:50%;background:#555;flex:none}
+  #recDot.on{background:#ef4444;animation:recblink 1s infinite}
+  @keyframes recblink{50%{opacity:.25}}
+  #recTimer{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem}
+  #recMsg{color:var(--mut);font-size:.8rem}
+  #recStage{position:relative;flex:1;overflow:hidden;background:#000}
+  #recVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #recVideo.mirror{transform:scaleX(-1)}
+  #recGrid{position:absolute;inset:0;pointer-events:none;display:none;
+    background:
+      linear-gradient(to right,transparent calc(33.33% - 1px),rgba(255,255,255,.4) calc(33.33% - 1px),rgba(255,255,255,.4) 33.33%,transparent 33.33%),
+      linear-gradient(to right,transparent calc(66.66% - 1px),rgba(255,255,255,.4) calc(66.66% - 1px),rgba(255,255,255,.4) 66.66%,transparent 66.66%),
+      linear-gradient(to bottom,transparent calc(33.33% - 1px),rgba(255,255,255,.4) calc(33.33% - 1px),rgba(255,255,255,.4) 33.33%,transparent 33.33%),
+      linear-gradient(to bottom,transparent calc(66.66% - 1px),rgba(255,255,255,.4) calc(66.66% - 1px),rgba(255,255,255,.4) 66.66%,transparent 66.66%)}
+  #recGrid.on{display:block}
+  #recBottom{background:rgba(10,12,18,.94);padding:12px 14px calc(14px + env(safe-area-inset-bottom));z-index:3}
+  #recMeterRow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  #recMeter{flex:1;height:10px;background:#222;border-radius:5px;min-width:0}
+  #recRes{background:var(--bg2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:.9rem}
+  #recActual{color:var(--mut);font-size:.75rem;min-height:1em;margin-bottom:8px}
+  #recBtns{display:flex;align-items:center;justify-content:center;gap:18px}
+  #recBtn{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:#ef4444;cursor:pointer;flex:none;padding:0}
+  #recBtn.stop{border-radius:16px}
+  #recBtns .spacer{width:64px;flex:none}
 </style>
 </head>
 <body>
@@ -140,6 +169,7 @@
     <div class="card">
       <div class="toolbar">
         <button class="ghostbtn" data-panel="media">📁 Media</button>
+        <button class="ghostbtn" data-panel="transform">🔄 Transform</button>
         <button class="ghostbtn" data-panel="color">🎨 Color</button>
         <button class="ghostbtn" data-panel="luts">🌈 LUTs</button>
         <button class="ghostbtn" data-panel="text">📝 Text</button>
@@ -150,6 +180,16 @@
         <p style="color:var(--mut)">Import videos, audio, images. Click to add to timeline.</p>
         <button class="btn" id="addMediaBtn">+ Import Media</button>
         <div id="mediaBin" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px"></div>
+      </div>
+
+      <div id="panel-transform" class="panel">
+        <p style="color:var(--mut)">Transforms apply to the selected clip.</p>
+        <div id="transformControls"></div>
+        <div class="toolbar">
+          <button class="ghostbtn tgl" id="flipHBtn">⇋ Flip H</button>
+          <button class="ghostbtn tgl" id="flipVBtn">⇅ Flip V</button>
+          <button class="ghostbtn" id="resetTBtn">Reset</button>
+        </div>
       </div>
 
       <div id="panel-color" class="panel">
@@ -239,6 +279,39 @@
 
 </div>
 
+<!-- ============ RECORDER ============ -->
+<div id="recOverlay" class="hidden">
+  <div id="recTop">
+    <button class="ghostbtn" id="recCloseBtn" style="margin:0">✕</button>
+    <span id="recDot"></span>
+    <span id="recTimer">0:00</span>
+    <span id="recMsg"></span>
+    <span style="flex:1"></span>
+    <button class="ghostbtn" id="recSwitchBtn" style="margin:0" title="Switch camera">🔄</button>
+  </div>
+  <div id="recStage">
+    <video id="recVideo" playsinline muted autoplay></video>
+    <div id="recGrid"></div>
+  </div>
+  <div id="recBottom">
+    <div id="recMeterRow">
+      <span style="font-size:.9rem">🎤</span>
+      <canvas id="recMeter" width="300" height="10"></canvas>
+      <select id="recRes">
+        <option value="720">720p</option>
+        <option value="1080" selected>1080p</option>
+        <option value="2160">4K</option>
+      </select>
+      <button class="ghostbtn" id="recGridBtn" style="margin:0" title="Grid">▦</button>
+    </div>
+    <div id="recActual"></div>
+    <div id="recBtns">
+      <button class="ghostbtn hidden" id="recPauseBtn" style="margin:0">⏸</button>
+      <button id="recBtn" aria-label="Record"></button>
+      <span class="spacer"></span>
+    </div>
+  </div>
+</div>
 <script>
 /* ============================================================
    RESHI STUDIO v1.0 — Professional Video Editing Studio
@@ -305,7 +378,7 @@ const S={
 (async function init(){
   await DB.open();
   loadRecent();
-  bindHome(); bindStudio(); bindPanels();
+  bindHome(); bindStudio(); bindPanels(); bindRecorder();
   initPreview();
 })();
 
@@ -329,7 +402,7 @@ function bindHome(){
     showStudio();
   };
   $('importBtn').onclick=()=>$('fileInput').click();
-  $('recordBtn').onclick=()=>alert('Recording coming in v1.1 — use Import for now.');
+  $('recordBtn').onclick=()=>Recorder.open();
   $('lutLibBtn').onclick=()=>{ if(!S.project){S.project=Project.create('LUTs');} showStudio(); switchPanel('luts'); };
   $('fileInput').onchange=e=>{ handleFiles(e.target.files); e.target.value=''; };
 }
@@ -404,6 +477,7 @@ function bindPanels(){
     $('volVal').textContent=e.target.value+'%';
     if(S.selectedClip)S.selectedClip.volume=e.target.value/100;
   };
+  initTransformUI();
 }
 
 /* ---------- Media Import ---------- */
@@ -479,6 +553,7 @@ function selectClip(cid){
     if(S.selectedClip.intensity!==undefined)$('lutIntensity').value=S.selectedClip.intensity*100;
     $('lutIntVal').textContent=Math.round((S.selectedClip.intensity||1)*100)+'%';
   }
+  refreshTransformUI();
   drawPreview();
 }
 
@@ -487,8 +562,14 @@ function splitClip(){
   const rel=S.playhead-c.start;
   if(rel<=0.1||rel>=c.dur-0.1){alert('Move playhead inside the clip to split.');return}
   const track=S.project.tracks.video.includes(c)?'video':'audio';
-  const c2={...c, id:'c'+Date.now(), start:c.start+rel, dur:c.dur-rel, trimS:c.trimS+rel};
+  const spd=(c.transform&&c.transform.speed)||1;
+  const c2={...c, id:'c'+Date.now(), start:c.start+rel, dur:c.dur-rel, trimS:c.trimS+rel*spd,
+    transform:c.transform?{...c.transform}:undefined,
+    text:c.text?c.text.map(t=>({...t})):c.text,
+    color:c.color?{...c.color}:c.color};
+  if(c2.transform)c2.transform.origDur=c2.dur*spd;
   c.dur=rel;
+  if(c.transform)c.transform.origDur=c.dur*spd;
   S.project.tracks[track].push(c2);
   pushUndo(); renderTimeline(); Project.save();
 }
@@ -500,8 +581,12 @@ function deleteClip(){
 }
 function duplicateClip(){
   if(!S.selectedClip)return;
-  const track=S.project.tracks.video.includes(S.selectedClip)?'video':'audio';
-  const c={...S.selectedClip, id:'c'+Date.now(), start:S.selectedClip.start+S.selectedClip.dur};
+  const sc=S.selectedClip;
+  const track=S.project.tracks.video.includes(sc)?'video':'audio';
+  const c={...sc, id:'c'+Date.now(), start:sc.start+sc.dur,
+    transform:sc.transform?{...sc.transform}:undefined,
+    text:sc.text?sc.text.map(t=>({...t})):sc.text,
+    color:sc.color?{...sc.color}:sc.color};
   S.project.tracks[track].push(c);
   pushUndo(); renderTimeline(); Project.save();
 }
@@ -524,6 +609,7 @@ function initPreview(){
   const fs=['precision mediump float; varying vec2 uv;',
     'uniform sampler2D vTex,lTex; uniform float lutN,inten,useLut;',
     'uniform float expo,bright,cont,sat,temp;',
+    'uniform float uScale,uRot,uOpacity; uniform vec2 uOffset,uFlip; uniform vec4 uCrop;',
     'vec3 applyLut(vec3 c){',
     ' vec3 s=clamp(c,0.,1.)*(lutN-1.); float b0=floor(s.b),b1=min(b0+1.,lutN-1.);',
     ' vec2 tsz=vec2(lutN,lutN*lutN);',
@@ -531,7 +617,20 @@ function initPreview(){
     ' vec3 c1=texture2D(lTex,(vec2(s.r,s.g+b1*lutN)+.5)/tsz).rgb;',
     ' return mix(c0,c1,fract(s.b));}',
     'void main(){',
-    ' vec3 c=texture2D(vTex,vec2(uv.x,1.-uv.y)).rgb;',
+    ' vec2 tp=vec2(uv.x,1.-uv.y);',
+    ' vec2 _q=(tp-uOffset)-0.5;',
+    ' float _rad=radians(-uRot);',
+    ' float _cs=cos(_rad),_sn=sin(_rad);',
+    ' vec2 _rr=vec2(_q.x*_cs-_q.y*_sn,_q.x*_sn+_q.y*_cs)/max(uScale,0.001)+0.5;',
+    ' _rr=mix(_rr,vec2(1.-_rr.x,_rr.y),uFlip.x);',
+    ' _rr=mix(_rr,vec2(_rr.x,1.-_rr.y),uFlip.y);',
+    ' vec3 c;',
+    ' if(_rr.x<0.||_rr.x>1.||_rr.y<0.||_rr.y>1.){c=vec3(0.);}',
+    ' else{',
+    '  vec2 _suv=vec2(uCrop.x+_rr.x*(1.-uCrop.x-uCrop.z),uCrop.y+_rr.y*(1.-uCrop.y-uCrop.w));',
+    '  c=texture2D(vTex,_suv).rgb;',
+    ' }',
+    ' c*=uOpacity;',
     ' c*=pow(2.,expo); c+=bright;',
     ' c=(c-.5)*(1.+cont)+.5;',
     ' float g=dot(c,vec3(.299,.587,.114)); c=mix(vec3(g),c,1.+sat);',
@@ -555,8 +654,11 @@ function initPreview(){
   texV=mk(); texL=mk();
   gl.uniform1i(gl.getUniformLocation(pr,'vTex'),0);
   gl.uniform1i(gl.getUniformLocation(pr,'lTex'),1);
-  ['lutN','inten','useLut','expo','bright','cont','sat','temp'].forEach(n=>U[n]=gl.getUniformLocation(pr,n));
+  ['lutN','inten','useLut','expo','bright','cont','sat','temp','uScale','uRot','uOpacity','uOffset','uFlip','uCrop'].forEach(n=>U[n]=gl.getUniformLocation(pr,n));
   gl.uniform1f(U.lutN,32); gl.uniform1f(U.inten,1); gl.uniform1f(U.useLut,0);
+  gl.uniform1f(U.uScale,1); gl.uniform1f(U.uRot,0); gl.uniform1f(U.uOpacity,1);
+  gl.uniform2f(U.uOffset,0,0); gl.uniform2f(U.uFlip,0,0);
+  gl.uniform4f(U.uCrop,0,0,0,0);
   glReady=true;
   (function loop(){ if(S.project)drawPreview(); requestAnimationFrame(loop); })();
 }
@@ -571,7 +673,8 @@ function drawPreview(){
   if(!m||m.type!=='video')return;
   if(cv.width!==m.w||cv.height!==m.h){cv.width=m.w||640;cv.height=m.h||360}
   if(previewVideo.src!==m.url){previewVideo.src=m.url;previewVideo.muted=true}
-  const t=clip.trimS+(S.playhead-clip.start);
+  const _spd=getT(clip).speed||1;
+  const t=Math.min(clip.trimS+(S.playhead-clip.start)*_spd,Math.max(0,(m.duration||0)-0.04));
   if(Math.abs(previewVideo.currentTime-t)>.3)previewVideo.currentTime=t;
   gl.viewport(0,0,cv.width,cv.height);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texV);
@@ -580,6 +683,13 @@ function drawPreview(){
   gl.uniform1f(U.expo,col.exposure||0); gl.uniform1f(U.bright,(col.brightness||0)/100);
   gl.uniform1f(U.cont,(col.contrast||0)/100); gl.uniform1f(U.sat,(col.saturation||0)/100);
   gl.uniform1f(U.temp,(col.temperature||0)/100);
+  const _T=getT(clip);
+  gl.uniform1f(U.uScale,Math.max(0.05,_T.scale||1));
+  gl.uniform1f(U.uRot,_T.rotation||0);
+  gl.uniform1f(U.uOpacity,(_T.opacity==null?100:_T.opacity)/100);
+  gl.uniform2f(U.uOffset,(_T.x||0)/100,(_T.y||0)/100);
+  gl.uniform2f(U.uFlip,_T.flipH?1:0,_T.flipV?1:0);
+  gl.uniform4f(U.uCrop,(_T.cropL||0)/100,(_T.cropT||0)/100,(_T.cropR||0)/100,(_T.cropB||0)/100);
   const lut=S.project.luts&&S.project.luts[clip.lut];
   gl.uniform1f(U.useLut,lut?1:0); gl.uniform1f(U.inten,clip.intensity||1);
   if(lut){ gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texL);
@@ -655,6 +765,57 @@ function renderLutGrid(){
   });
 }
 
+/* ---------- Transform tools ---------- */
+const TDEFS=[
+  ['scale','Scale',0.1,3,0.01,1,v=>v.toFixed(2)+'×'],
+  ['x','Position X %',-100,100,1,0,v=>v+'%'],
+  ['y','Position Y %',-100,100,1,0,v=>v+'%'],
+  ['rotation','Rotation °',0,360,1,0,v=>v+'°'],
+  ['cropL','Crop Left %',0,40,1,0,v=>v+'%'],
+  ['cropT','Crop Top %',0,40,1,0,v=>v+'%'],
+  ['cropR','Crop Right %',0,40,1,0,v=>v+'%'],
+  ['cropB','Crop Bottom %',0,40,1,0,v=>v+'%'],
+  ['opacity','Opacity %',0,100,1,100,v=>v+'%'],
+  ['speed','Speed',0.25,4,0.05,1,v=>v.toFixed(2)+'×'],
+];
+function defaultTransform(){return {scale:1,x:0,y:0,rotation:0,flipH:0,flipV:0,cropL:0,cropT:0,cropR:0,cropB:0,opacity:100,speed:1};}
+function getT(clip){ if(!clip.transform)clip.transform=defaultTransform(); return clip.transform; }
+function initTransformUI(){
+  $('transformControls').innerHTML=TDEFS.map(d=>
+    `<div class="slider-row"><label>${d[1]}</label>`+
+    `<input type="range" data-t="${d[0]}" min="${d[2]}" max="${d[3]}" step="${d[4]}" value="${d[5]}"/>`+
+    `<span class="val" data-tv="${d[0]}">${d[6](d[5])}</span></div>`).join('');
+  $('transformControls').querySelectorAll('input').forEach(s=>{
+    s.addEventListener('input',()=>{
+      const k=s.dataset.t, v=+s.value;
+      const def=TDEFS.find(d=>d[0]===k);
+      $('transformControls').querySelector(`[data-tv="${k}"]`).textContent=def[6](v);
+      setT(k,v);
+    });
+  });
+  $('flipHBtn').onclick=()=>{ const c=S.selectedClip; if(!c)return; const T=getT(c); T.flipH=T.flipH?0:1; afterT(); refreshTransformUI(); };
+  $('flipVBtn').onclick=()=>{ const c=S.selectedClip; if(!c)return; const T=getT(c); T.flipV=T.flipV?0:1; afterT(); refreshTransformUI(); };
+  $('resetTBtn').onclick=()=>{ const c=S.selectedClip; if(!c)return; c.transform=defaultTransform(); refreshTransformUI(); afterT(); };
+}
+function setT(k,v){
+  const c=S.selectedClip; if(!c)return;
+  const T=getT(c);
+  if(k==='speed'){
+    T.origDur=c.dur*(T.speed||1);
+    T.speed=v; c.dur=T.origDur/v; renderTimeline();
+  } else T[k]=v;
+  afterT();
+}
+function afterT(){ drawPreview(); Project.save(); }
+function refreshTransformUI(){
+  const c=S.selectedClip, T=c?getT(c):defaultTransform();
+  TDEFS.forEach(d=>{
+    const s=$('transformControls').querySelector(`[data-t="${d[0]}"]`);
+    if(s){ s.value=T[d[0]]; $('transformControls').querySelector(`[data-tv="${d[0]}"]`).textContent=d[6](T[d[0]]); }
+  });
+  $('flipHBtn').classList.toggle('on',!!T.flipH);
+  $('flipVBtn').classList.toggle('on',!!T.flipV);
+}
 /* ---------- Text ---------- */
 function addText(){
   const txt=prompt('Text:','Hello'); if(!txt)return;
@@ -669,6 +830,187 @@ function renderTextList(){
   el.querySelectorAll('[data-ti]').forEach(b=>b.onclick=()=>{S.selectedClip.text.splice(+b.dataset.ti,1);renderTextList();drawPreview()});
 }
 
+/* ---------- Recorder ---------- */
+const Recorder={
+  stream:null, mr:null, chunks:[], cams:[], camIdx:0, facing:'environment',
+  recStart:0, recAccum:0, recTimer:null, AC:null, analyser:null, micSrc:null,
+  meterRAF:0, mime:'', fromHome:false,
+  async open(){
+    this.fromHome=$('home').style.display!=='none';
+    $('recOverlay').classList.remove('hidden');
+    this.msg('');
+    if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){
+      this.msg('Camera not supported in this browser.'); return;
+    }
+    if(!window.MediaRecorder){
+      this.msg('Video recording is not supported here — use Import instead.'); return;
+    }
+    try{ await this.startStream({facingMode:this.facing}); await this.refreshCams(); }
+    catch(e){ this.handleCamErr(e); }
+  },
+  close(){
+    if(this.mr&&(this.mr.state==='recording'||this.mr.state==='paused')){
+      this.timerPause(); try{ this.mr.stop(); }catch(e){}
+    }
+    this.stopStream(); this.timerReset(); this.msg('');
+    $('recOverlay').classList.add('hidden');
+  },
+  resDims(v){ return v==='2160'?[3840,2160]:v==='1080'?[1920,1080]:[1280,720]; },
+  async startStream(videoExtra){
+    this.stopStream();
+    const [w,h]=this.resDims($('recRes').value);
+    const cons={audio:true, video:{width:{ideal:w}, height:{ideal:h}, ...(videoExtra||{})}};
+    this.stream=await navigator.mediaDevices.getUserMedia(cons);
+    const v=$('recVideo'); v.srcObject=this.stream;
+    try{ await v.play(); }catch(e){}
+    v.classList.toggle('mirror', this.currentFacing()==='user');
+    this.tuneResOptions(); this.startMeter(); this.showActual();
+  },
+  stopStream(){
+    this.stopMeter(); clearInterval(this.recTimer);
+    const v=$('recVideo');
+    if(this.stream){ this.stream.getTracks().forEach(t=>{try{t.stop()}catch(e){}}); this.stream=null; }
+    v.srcObject=null;
+    $('recDot').classList.remove('on'); $('recBtn').classList.remove('stop');
+    $('recPauseBtn').classList.add('hidden');
+  },
+  currentFacing(){
+    const tr=this.stream&&this.stream.getVideoTracks()[0];
+    const s=tr&&tr.getSettings()||{};
+    if(s.facingMode)return s.facingMode;
+    const lbl=(tr&&tr.label||'').toLowerCase();
+    return /front|user|facetime/.test(lbl)?'user':'environment';
+  },
+  async refreshCams(){
+    try{ const devs=await navigator.mediaDevices.enumerateDevices();
+      this.cams=devs.filter(d=>d.kind==='videoinput');
+    }catch(e){ this.cams=[]; }
+    $('recSwitchBtn').style.display=this.cams.length>1?'':'none';
+  },
+  async switchCam(){
+    if(!this.stream)return;
+    if(this.cams.length>1){
+      this.camIdx=(this.camIdx+1)%this.cams.length;
+      try{ await this.startStream({deviceId:{exact:this.cams[this.camIdx].deviceId}}); }
+      catch(e){ this.msg('Could not switch camera.'); }
+    }else{
+      const prev=this.facing;
+      this.facing=this.facing==='user'?'environment':'user';
+      try{ await this.startStream({facingMode:this.facing}); }
+      catch(e){ this.facing=prev; this.msg('Could not switch camera.'); }
+    }
+    await this.refreshCams();
+  },
+  tuneResOptions(){
+    const tr=this.stream&&this.stream.getVideoTracks()[0];
+    const caps=tr&&tr.getCapabilities&&tr.getCapabilities();
+    const maxW=(caps&&caps.width&&caps.width.max)||Infinity;
+    const sel=$('recRes');
+    [...sel.options].forEach(o=>{ o.disabled=this.resDims(o.value)[0]>maxW; });
+  },
+  async setRes(){
+    if(!this.stream)return;
+    const [w,h]=this.resDims($('recRes').value);
+    const tr=this.stream.getVideoTracks()[0];
+    try{ await tr.applyConstraints({width:{ideal:w},height:{ideal:h}}); }
+    catch(e){ this.msg('Resolution not available — using closest.'); }
+    this.showActual();
+  },
+  showActual(){
+    const tr=this.stream&&this.stream.getVideoTracks()[0];
+    const s=tr&&tr.getSettings();
+    $('recActual').textContent=(s&&s.width)?('Actual: '+s.width+'×'+s.height):'';
+  },
+  pickMime(){
+    const cands=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=h264','video/webm'];
+    for(const c of cands){ try{ if(MediaRecorder.isTypeSupported(c))return c; }catch(e){} }
+    return '';
+  },
+  startRec(){
+    if(!this.stream){ this.msg('No camera — open the recorder first.'); return; }
+    if(this.mr&&(this.mr.state==='recording'||this.mr.state==='paused'))return;
+    this.mime=this.pickMime(); this.chunks=[];
+    const opts={videoBitsPerSecond:8000000};
+    if(this.mime)opts.mimeType=this.mime;
+    try{ this.mr=new MediaRecorder(this.stream,opts); }
+    catch(e){ this.msg('Could not start recorder.'); return; }
+    this.mr.ondataavailable=e=>{ if(e.data&&e.data.size)this.chunks.push(e.data); };
+    this.mr.onstop=()=>this.saveRecording();
+    try{ this.mr.start(250); }
+    catch(e){ this.msg('Could not start.'); return; }
+    this.recAccum=0; this.timerStart();
+    $('recDot').classList.add('on'); $('recBtn').classList.add('stop');
+    $('recPauseBtn').classList.remove('hidden'); this.msg('Recording…');
+  },
+  togglePause(){
+    if(!this.mr)return;
+    try{
+      if(this.mr.state==='recording'){ this.mr.pause(); this.timerPause(); $('recPauseBtn').textContent='▶'; }
+      else if(this.mr.state==='paused'){ this.mr.resume(); this.timerStart(); $('recPauseBtn').textContent='⏸'; }
+    }catch(e){}
+  },
+  stopRec(){
+    if(this.mr&&(this.mr.state==='recording'||this.mr.state==='paused')){
+      this.timerPause(); try{ this.mr.stop(); }catch(e){}
+    }
+  },
+  saveRecording(){
+    $('recDot').classList.remove('on'); $('recBtn').classList.remove('stop');
+    $('recPauseBtn').classList.add('hidden');
+    const type=this.mime||'video/mp4';
+    const blob=new Blob(this.chunks,{type}); this.chunks=[]; this.mr=null;
+    const dur=this.recAccum; this.timerReset();
+    if(!blob.size){ this.msg('Empty recording.'); return; }
+    if(!S.project)S.project=Project.create('Untitled Project');
+    const tr=this.stream&&this.stream.getVideoTracks()[0];
+    const s=(tr&&tr.getSettings())||{};
+    const ext=type.indexOf('mp4')>=0?'mp4':'webm';
+    const m={id:'m'+Date.now(), name:'Recording '+new Date().toLocaleTimeString()+'.'+ext,
+      type:'video', blob, url:URL.createObjectURL(blob),
+      duration:Math.max(0.5,dur), w:s.width||0, h:s.height||0};
+    S.project.media.push(m); renderMediaBin(); Project.save();
+    this.msg('Saved ✓'); if(this.fromHome)showStudio();
+  },
+  timerStart(){ this.recStart=Date.now(); clearInterval(this.recTimer);
+    this.recTimer=setInterval(()=>{ $('recTimer').textContent=fmtT(this.recAccum+(Date.now()-this.recStart)/1000); },200); },
+  timerPause(){ if(this.recStart)this.recAccum+=(Date.now()-this.recStart)/1000;
+    this.recStart=0; clearInterval(this.recTimer); },
+  timerReset(){ this.recAccum=0; this.recStart=0; clearInterval(this.recTimer); $('recTimer').textContent='0:00'; },
+  startMeter(){
+    this.stopMeter();
+    try{
+      const ACw=window.AudioContext||window.webkitAudioContext;
+      if(!ACw||!this.stream)return;
+      this.AC=new ACw(); this.micSrc=this.AC.createMediaStreamSource(this.stream);
+      this.analyser=this.AC.createAnalyser(); this.analyser.fftSize=512;
+      this.micSrc.connect(this.analyser);
+      const data=new Uint8Array(512), mc=$('recMeter'), cx=mc.getContext('2d');
+      const draw=()=>{ this.meterRAF=requestAnimationFrame(draw);
+        this.analyser.getByteTimeDomainData(data);
+        let sum=0; for(let i=0;i<data.length;i++){const v=(data[i]-128)/128; sum+=v*v;}
+        const rms=Math.sqrt(sum/data.length);
+        cx.clearRect(0,0,mc.width,mc.height); cx.fillStyle='#10b981';
+        cx.fillRect(0,0,Math.min(mc.width,mc.width*rms*4),mc.height); };
+      draw();
+    }catch(e){}
+  },
+  stopMeter(){ cancelAnimationFrame(this.meterRAF);
+    try{this.micSrc&&this.micSrc.disconnect()}catch(e){}
+    try{this.AC&&this.AC.close()}catch(e){} this.AC=null; },
+  handleCamErr(e){
+    const n=e&&(e.name||'');
+    this.msg(n==='NotAllowedError'?'Permission denied. Allow camera/mic access.':'Could not open camera.');
+  },
+  msg(t){ $('recMsg').textContent=t; }
+};
+function bindRecorder(){
+  $('recBtn').onclick=()=>{ (Recorder.mr&&(Recorder.mr.state==='recording'||Recorder.mr.state==='paused'))?Recorder.stopRec():Recorder.startRec(); };
+  $('recPauseBtn').onclick=()=>Recorder.togglePause();
+  $('recCloseBtn').onclick=()=>Recorder.close();
+  $('recSwitchBtn').onclick=()=>Recorder.switchCam();
+  $('recGridBtn').onclick=()=>$('recGrid').classList.toggle('on');
+  $('recRes').onchange=()=>Recorder.setRes();
+}
 /* ---------- Export ---------- */
 let expCancel=false;
 async function startExport(){
@@ -723,18 +1065,32 @@ async function exportSimple(){
     await new Promise(r=>{v.onloadedmetadata=r; v.load()});
     const cvs=document.createElement('canvas'); cvs.width=outW; cvs.height=outH;
     const cx=cvs.getContext('2d');
+    const T=clip.transform||{};
+    const spd=T.speed||1;
+    const scale=Math.max(0.05,T.scale||1), rot=((T.rotation||0)*Math.PI)/180;
+    const ox=((T.x||0)/100)*outW, oy=((T.y||0)/100)*outH;
+    const op=(T.opacity==null?100:T.opacity)/100;
+    const sx=((T.cropL||0)/100)*m.w, sy=((T.cropT||0)/100)*m.h;
+    const sw=m.w*(1-((T.cropL||0)+(T.cropR||0))/100);
+    const sh=m.h*(1-((T.cropT||0)+(T.cropB||0))/100);
+    const vr=sw/sh, or=outW/outH;
+    let dw,dh;
+    if(vr>or){dh=outH;dw=outH*vr}else{dw=outW;dh=outW/vr}
+    dw*=scale; dh*=scale;
     const steps=Math.ceil(clip.dur*fps);
     for(let i=0;i<steps;i++){
       if(expCancel)throw new Error('Cancelled');
-      const t=clip.trimS+(i/fps);
+      const t=clip.trimS+(i/fps)*spd;
       v.currentTime=Math.min(t,m.duration-0.05);
       await new Promise(r=>{v.onseeked=r; setTimeout(r,500)});
-      // Draw with cover fit
-      const vr=m.w/m.h, or=outW/outH;
-      let dw,dh;
-      if(vr>or){dh=outH;dw=outH*vr}else{dw=outW;dh=outW/vr}
       cx.fillStyle='#000'; cx.fillRect(0,0,outW,outH);
-      cx.drawImage(v,(outW-dw)/2,(outH-dh)/2,dw,dh);
+      cx.save();
+      cx.globalAlpha=op;
+      cx.translate(outW/2+ox,outH/2+oy);
+      cx.rotate(rot);
+      cx.scale(T.flipH?-1:1,T.flipV?-1:1);
+      cx.drawImage(v,sx,sy,sw,sh,-dw/2,-dh/2,dw,dh);
+      cx.restore();
       // Text overlay
       if(clip.text)for(const tx of clip.text){
         cx.font=`bold ${tx.size}px sans-serif`; cx.fillStyle=tx.color;
