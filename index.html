@@ -117,7 +117,7 @@ function initGL(){
   const cv=$('gl');
   gl=cv.getContext('webgl',{preserveDrawingBuffer:false,antialias:false});
   if(!gl){err('WebGL not supported');return false;}
-  const vs='attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}';
+  const vs='attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,p.y*.5+.5);gl_Position=vec4(p,0.,1.);}';
   const fs=`precision mediump float;varying vec2 v;
 uniform sampler2D uV;uniform sampler2D uL;uniform float uS;uniform float uA;
 vec3 fetchLUT(float r,float g,float b){
