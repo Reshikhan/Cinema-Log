@@ -8,7 +8,7 @@
 <style>
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   :root{
-    --bg:#0f1117; --bg2:#161a24; --card:#1c2130; --line:#2a3045;
+    --bg:#0a0a0f; --bg2:#161a24; --card:#1c2130; --line:#2a3045;
     --txt:#e8eaf2; --mut:#9aa0b8; --acc:#8b5cf6; --acc2:#ec4899;
   }
   body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
@@ -75,6 +75,7 @@
   #prog{height:8px; background:var(--bg2); border-radius:4px; overflow:hidden; margin:12px 0; display:none}
   #progBar{height:100%; width:0%; background:linear-gradient(90deg,#8b5cf6,#ec4899); transition:width .2s}
   .tgl.on{border-color:var(--acc); background:#2a1f4d}
+  #preview.pickwb{cursor:crosshair}
   /* Transitions */
   .transbtn{position:absolute; top:50%; transform:translate(-50%,-50%); width:26px; height:26px;
     border-radius:50%; background:var(--bg2); border:1px solid var(--acc); color:var(--txt);
@@ -131,6 +132,65 @@
   #recBtn{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:#ef4444;cursor:pointer;flex:none;padding:0}
   #recBtn.stop{border-radius:16px}
   #recBtns .spacer{width:64px;flex:none}
+
+  /* ===== Mobile shell (PeekLUT-style) ===== */
+  .mscreen{padding-top:2px}
+  .mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 4px 8px}
+  .mhead h2{margin:0;font-size:1.5rem;font-weight:800;letter-spacing:.2px}
+  .mhead-actions{display:flex;gap:10px}
+  .mhead .btn{margin:0;padding:10px 16px;font-size:.85rem}
+  .iconbtn{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .iconbtn:active{transform:scale(.93)}
+  .empty{text-align:center;padding:52px 20px}
+  .empty-ic{font-size:3.2rem;margin-bottom:10px}
+  .empty p{margin:6px 0}
+  .empty .mut{color:var(--mut);font-size:.9rem}
+  .proj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:6px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+  .pcard:active{transform:scale(.98)}
+  .pthumb{position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:800;color:rgba(255,255,255,.93);text-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .pthumb.g0{background:linear-gradient(135deg,#4c1d95,#7c3aed)}
+  .pthumb.g1{background:linear-gradient(135deg,#0e7490,#22d3ee)}
+  .pthumb.g2{background:linear-gradient(135deg,#be123c,#fb7185)}
+  .pthumb.g3{background:linear-gradient(135deg,#15803d,#4ade80)}
+  .pthumb.g4{background:linear-gradient(135deg,#b45309,#fbbf24)}
+  .pcard-menu{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .pname{padding:10px 12px 2px;font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pdate{padding:0 12px 12px;color:var(--mut);font-size:.75rem}
+  /* Tab bar */
+  #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:rgba(10,10,15,.97);border-top:1px solid var(--line);padding:8px 16px calc(10px + env(safe-area-inset-bottom))}
+  .tabbtn{flex:1;background:none;border:none;color:var(--mut);font-size:.72rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;font-family:inherit}
+  .tabbtn .tic{font-size:1.4rem;line-height:1}
+  .tabbtn.active{color:#fff}
+  /* Bottom sheets */
+  #sheetBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:88}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#14141c;border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.25,1);max-width:640px;margin:0 auto}
+  .sheet.open{transform:translateY(0)}
+  .sheet-handle{width:42px;height:4px;border-radius:2px;background:var(--line);margin:6px auto 10px}
+  .sheet h3{margin:4px 0 12px;text-align:center;font-size:1.05rem}
+  .sheet-opts{display:flex;gap:10px;margin-bottom:6px}
+  .sheet-opts button{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:14px;color:var(--txt);padding:18px 6px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:inherit}
+  .sheet-opts button:active{transform:scale(.96);border-color:var(--acc)}
+  .sheet-opts button .ic{font-size:1.7rem}
+  .sheetopt{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:14px;font-size:.95rem;margin:8px 0;cursor:pointer;font-family:inherit}
+  .sheetopt.danger{color:#f87171;border-color:#7f1d1d}
+  .sheet .ghostbtn{width:100%;margin:10px 0 0}
+  /* Toast */
+  #toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(16px);background:#232839;border:1px solid var(--line);color:var(--txt);padding:10px 18px;border-radius:24px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:120;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* LUT library */
+  #lutPrevCanvas{width:100%;border-radius:12px;display:block;background:#000}
+  #lutPrevName{text-align:center;color:var(--mut);margin:10px 0 0;font-size:.9rem}
+  .pills{display:flex;gap:8px;margin:2px 0 12px;flex-wrap:wrap}
+  .pill{background:var(--bg2);border:1px solid var(--line);color:var(--mut);border-radius:20px;padding:8px 16px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+  .pill.active{background:#2a1f4d;border-color:var(--acc);color:#fff}
+  .lutlib-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .liblut{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer}
+  .liblut.active{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+  .liblut canvas{width:100%;display:block;aspect-ratio:16/9;background:#000}
+  .liblut .lname{padding:8px 6px;font-size:.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+  .empty-note{grid-column:1/-1;text-align:center;color:var(--mut);font-size:.85rem;padding:20px 0}
+  .wrap{padding-bottom:110px}
 </style>
 </head>
 <body>
@@ -167,6 +227,47 @@
     <input type="file" id="fileInput" accept="video/*,audio/*,image/*,.cube" multiple class="hidden"/>
   </div>
 
+  <!-- ============ PROJECTS (mobile shell) ============ -->
+  <div id="screen-projects" class="mscreen hidden">
+    <div class="mhead">
+      <h2>Projects</h2>
+      <div class="mhead-actions">
+        <button class="iconbtn" id="projRecordBtn" title="Record video">&#127909;</button>
+        <button class="iconbtn" id="newProjBtn2" title="New project">&#65291;</button>
+      </div>
+    </div>
+    <div id="projEmpty" class="empty hidden">
+      <div class="empty-ic">&#127908;</div>
+      <p style="font-size:1.05rem"><b>No projects yet</b></p>
+      <p class="mut">Edits you save will show up here</p>
+      <button class="btn" id="emptyNewBtn" style="margin-top:12px">+ New Project</button>
+    </div>
+    <div id="projGrid" class="proj-grid"></div>
+  </div>
+
+  <!-- ============ LUTS LIBRARY (mobile shell) ============ -->
+  <div id="screen-luts" class="mscreen hidden">
+    <div class="mhead">
+      <h2>LUTs</h2>
+      <button class="btn" id="libImportLut">+ Import .cube</button>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px">Preview</h3>
+      <canvas id="lutPrevCanvas" width="320" height="180"></canvas>
+      <p id="lutPrevName">Original</p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px">Library</h3>
+      <div class="pills" id="lutPills">
+        <button class="pill active" data-cat="user">User LUTs</button>
+        <button class="pill" data-cat="creative">Creative</button>
+        <button class="pill" data-cat="builtin">Built-in</button>
+      </div>
+      <div id="lutLibGrid" class="lutlib-grid"></div>
+    </div>
+    <input type="file" id="libLutInput" accept=".cube" class="hidden"/>
+  </div>
+
   <!-- ============ STUDIO ============ -->
   <div id="studio">
     <div class="toolbar">
@@ -183,6 +284,20 @@
       <div id="previewWrap">
         <canvas id="preview"></canvas>
         <canvas id="preview2d" class="hidden"></canvas>
+  <div id="transModal" class="hidden">
+    <div class="mbox">
+      <h3>🎞 Transition</h3>
+      <div id="transOpts"></div>
+      <div class="slider-row"><label>Duration</label>
+        <input type="range" id="transDur" min="0.3" max="3" step="0.1" value="1"/>
+        <span class="val" id="transDurVal">1.0s</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="transApply" style="flex:1;margin:0">Apply</button>
+        <button class="ghostbtn" id="transRemove" style="margin:0">Remove</button>
+        <button class="ghostbtn" id="transCancel" style="margin:0">Cancel</button>
+      </div>
+    </div>
+  </div>
       </div>
       <div class="toolbar" style="justify-content:center">
         <button class="ghostbtn" id="playBtn">▶ Play</button>
@@ -195,6 +310,7 @@
         <button class="ghostbtn" data-panel="media">📁 Media</button>
         <button class="ghostbtn" data-panel="transform">🔄 Transform</button>
         <button class="ghostbtn" data-panel="color">🎨 Color</button>
+        <button class="ghostbtn" data-panel="ai">✨ AI</button>
         <button class="ghostbtn" data-panel="luts">🌈 LUTs</button>
         <button class="ghostbtn" data-panel="text">📝 Text</button>
         <button class="ghostbtn" data-panel="audio">🔊 Audio</button>
@@ -218,6 +334,63 @@
 
       <div id="panel-color" class="panel">
         <div id="colorControls"></div>
+<div class="ctabs" id="colorTabs">
+  <button class="ghostbtn ctab active" data-ct="basic">Basic</button>
+  <button class="ghostbtn ctab" data-ct="curves">Curves</button>
+  <button class="ghostbtn ctab" data-ct="wheels">Wheels</button>
+  <button class="ghostbtn ctab" data-ct="hsl">HSL</button>
+  <button class="ghostbtn ctab" data-ct="finish">Finish</button>
+</div>
+<div class="csec" data-cs="basic" id="csec-basic"></div>
+<div class="csec hidden" data-cs="curves">
+  <div class="ctabs" id="curveChTabs">
+    <button class="ghostbtn cch active" data-ch="master">Master</button>
+    <button class="ghostbtn cch" data-ch="r">R</button>
+    <button class="ghostbtn cch" data-ch="g">G</button>
+    <button class="ghostbtn cch" data-ch="b">B</button>
+    <span style="flex:1"></span>
+    <button class="ghostbtn" id="curveReset">Reset</button>
+  </div>
+  <canvas id="curveCv" width="300" height="180" style="touch-action:none;width:100%;max-width:360px;background:#0f1117;border:1px solid var(--line);border-radius:10px"></canvas>
+  <p class="hint">Tap to add a point · drag to move · double-tap a point to delete</p>
+</div>
+<div class="csec hidden" data-cs="wheels">
+  <div style="display:flex;gap:14px;justify-content:space-around;flex-wrap:wrap">
+    <div class="wheelbox"><canvas id="wheelSh" width="110" height="110" style="touch-action:none"></canvas><div>Shadows</div><button class="ghostbtn" data-wr="sh">Reset</button></div>
+    <div class="wheelbox"><canvas id="wheelMid" width="110" height="110" style="touch-action:none"></canvas><div>Midtones</div><button class="ghostbtn" data-wr="mid">Reset</button></div>
+    <div class="wheelbox"><canvas id="wheelHi" width="110" height="110" style="touch-action:none"></canvas><div>Highlights</div><button class="ghostbtn" data-wr="hi">Reset</button></div>
+  </div>
+  <p class="hint">Drag from center: direction = hue, distance = intensity</p>
+</div>
+<div class="csec hidden" data-cs="hsl">
+  <div class="slider-row"><label>Hue shift</label><input type="range" id="hslH" min="-180" max="180" value="0"/><span class="val" id="hslHv">0°</span></div>
+  <div class="slider-row"><label>Saturation</label><input type="range" id="hslS" min="-100" max="100" value="0"/><span class="val" id="hslSv">0</span></div>
+  <div class="slider-row"><label>Lightness</label><input type="range" id="hslL" min="-100" max="100" value="0"/><span class="val" id="hslLv">0</span></div>
+  <button class="ghostbtn" id="hslReset">Reset HSL</button>
+</div>
+<div class="csec hidden" data-cs="finish">
+  <div class="slider-row"><label>Vignette</label><input type="range" id="vigA" min="0" max="100" value="0"/><span class="val" id="vigAv">0</span></div>
+  <div class="slider-row"><label>Softness</label><input type="range" id="vigS" min="0" max="100" value="50"/><span class="val" id="vigSv">50</span></div>
+  <div class="slider-row"><label>Sharpen</label><input type="range" id="sharpS" min="0" max="100" value="0"/><span class="val" id="sharpSv">0</span></div>
+  <div class="slider-row"><label>Grain</label><input type="range" id="grainS" min="0" max="100" value="0"/><span class="val" id="grainSv">0</span></div>
+  <button class="ghostbtn" id="finishReset">Reset Finish</button>
+</div>
+      </div>
+
+      <div id="panel-ai" class="panel">
+        <p style="color:var(--mut)">AI tools analyze the current frame and grade the selected clip.</p>
+        <div class="toolbar" style="justify-content:flex-start;flex-wrap:wrap;gap:8px">
+          <button class="btn" id="aiEnhanceBtn">✨ Auto Enhance</button>
+          <button class="ghostbtn tgl" id="aiWbBtn">🎯 WB Picker</button>
+          <button class="ghostbtn" id="aiWbReset">Reset WB</button>
+        </div>
+        <p style="color:var(--mut);font-size:.8rem;margin:12px 0 6px">AI Looks — adapt to the current frame:</p>
+        <div class="toolbar" style="justify-content:flex-start;flex-wrap:wrap;gap:8px">
+          <button class="ghostbtn" id="aiLookCine">🎬 Cinematic</button>
+          <button class="ghostbtn" id="aiLookVibrant">🌈 Vibrant</button>
+          <button class="ghostbtn" id="aiLookClean">🧼 Clean</button>
+        </div>
+        <p class="hint" id="aiStatus" style="min-height:1.2em"></p>
       </div>
 
       <div id="panel-luts" class="panel">
@@ -336,6 +509,40 @@
     </div>
   </div>
 </div>
+
+<!-- ============ MOBILE SHELL CHROME ============ -->
+<nav id="tabbar">
+  <button class="tabbtn active" data-tab="projects"><span class="tic">&#128193;</span><span>Projects</span></button>
+  <button class="tabbtn" data-tab="luts"><span class="tic">&#127752;</span><span>LUTs</span></button>
+</nav>
+
+<div id="sheetBackdrop" class="hidden"></div>
+
+<div id="mediaSheet" class="sheet hidden">
+  <div class="sheet-handle"></div>
+  <h3>Add Media</h3>
+  <div class="sheet-opts">
+    <button id="msVideo"><span class="ic">&#127908;</span><span>Video</span></button>
+    <button id="msImage"><span class="ic">&#128444;</span><span>Image</span></button>
+    <button id="msFiles"><span class="ic">&#128193;</span><span>Files</span></button>
+  </div>
+  <button class="ghostbtn" id="msCancel">Cancel</button>
+</div>
+
+<div id="projSheet" class="sheet hidden">
+  <div class="sheet-handle"></div>
+  <h3 id="projSheetName">Project</h3>
+  <button class="sheetopt" id="projRename">&#9999;&#65039; Rename</button>
+  <button class="sheetopt danger" id="projDelete">&#128465;&#65039; Delete</button>
+  <button class="ghostbtn" id="projSheetCancel">Cancel</button>
+</div>
+
+<input type="file" id="msVideoInput" accept="video/*" class="hidden"/>
+<input type="file" id="msImageInput" accept="image/*" class="hidden"/>
+<input type="file" id="msFilesInput" accept="video/*,audio/*,image/*" multiple class="hidden"/>
+
+<div id="toast"></div>
+
 <script>
 /* ============================================================
    RESHI STUDIO v1.0 — Professional Video Editing Studio
@@ -403,7 +610,8 @@ const S={
 (async function init(){
   await DB.open();
   loadRecent();
-  bindHome(); bindStudio(); bindPanels(); bindRecorder(); bindTransModal(); initAdvancedColor();
+  bindHome(); bindStudio(); bindPanels(); bindRecorder(); bindTransModal(); initAdvancedColor(); initAIColor();
+  initMobileShell();
   initPreview();
 })();
 
@@ -428,7 +636,7 @@ function bindHome(){
   };
   $('importBtn').onclick=()=>$('fileInput').click();
   $('recordBtn').onclick=()=>Recorder.open();
-  $('lutLibBtn').onclick=()=>{ if(!S.project){S.project=Project.create('LUTs');} showStudio(); switchPanel('luts'); };
+  $('lutLibBtn').onclick=()=>showScreen('luts');
   $('fileInput').onchange=e=>{ handleFiles(e.target.files); e.target.value=''; };
 }
 
@@ -446,8 +654,7 @@ function openProject(pid){
 }
 
 function showStudio(){
-  $('home').style.display='none';
-  $('studio').style.display='block';
+  showScreen('editor');
   $('projName').textContent=S.project.name;
   ensureTransitions();
   renderTimeline(); renderMediaBin(); warmLUTCache();
@@ -455,8 +662,8 @@ function showStudio(){
 }
 
 function bindStudio(){
-  $('backBtn').onclick=()=>{ $('studio').style.display='none'; $('home').style.display='block'; loadRecent(); };
-  $('addMediaBtn').onclick=()=>$('fileInput').click();
+  $('backBtn').onclick=()=>showScreen('projects');
+  $('addMediaBtn').onclick=openMediaSheet;
   $('playBtn').onclick=togglePlay;
   $('splitBtn').onclick=splitClip;
   $('delBtn').onclick=deleteClip;
@@ -674,6 +881,7 @@ function advDefaults(c){
   c.vignette=c.vignette||{a:0,s:50};
   if(c.sharpen===undefined)c.sharpen=0;
   if(c.grain===undefined)c.grain=0;
+  c.wb=c.wb||{r:1,b:1};
   return c;
 }
 function advColor(){
@@ -908,6 +1116,159 @@ function refreshAdvancedUI(){
   if(typeof curveEd!=='undefined')curveEd.load(c);
   curvesDirty=true;
 }
+/* ============================================================
+   AI COLOR MODULE — auto enhance, WB picker, AI looks
+   ============================================================ */
+let aiWbPick=false;
+const aiFrame=document.createElement('canvas');
+function aiStatus(msg){ const el=$('aiStatus'); if(el)el.textContent=msg; }
+function aiFrameStats(){
+  const v=previewVideo;
+  if(!v||!v.videoWidth||v.readyState<2)return null;
+  aiFrame.width=160; aiFrame.height=90;
+  const cx=aiFrame.getContext('2d',{willReadFrequently:true});
+  try{ cx.drawImage(v,0,0,160,90); }catch(e){ return null; }
+  let d; try{ d=cx.getImageData(0,0,160,90).data; }catch(e){ return null; }
+  let sr=0,sg=0,sb=0,ss=0; const n=160*90;
+  const hist=new Uint32Array(256);
+  for(let i=0;i<n;i++){
+    const r=d[i*4]/255,g=d[i*4+1]/255,b=d[i*4+2]/255;
+    sr+=r; sg+=g; sb+=b;
+    const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+    ss+=mx<1e-6?0:(mx-mn)/mx;
+    hist[Math.min(255,((r*0.299+g*0.587+b*0.114)*255)|0)]++;
+  }
+  return {r:sr/n,g:sg/n,b:sb/n,sat:ss/n,hist,n};
+}
+function aiPct(hist,n,p){
+  let acc=0; const t=p*n;
+  for(let i=0;i<256;i++){ acc+=hist[i]; if(acc>=t)return i/255; }
+  return 1;
+}
+function aiGrayWB(st){
+  const gray=(st.r+st.g+st.b)/3||1e-6;
+  const cg=x=>Math.min(2,Math.max(0.5,x));
+  return {r:cg(gray/Math.max(1e-6,st.r)), b:cg(gray/Math.max(1e-6,st.b))};
+}
+function syncBasicSliders(){
+  const c=S.selectedClip; if(!c)return; const col=c.color||{};
+  const cc=$('colorControls'); if(!cc)return;
+  cc.querySelectorAll('input').forEach(s=>{
+    const k=s.dataset.c;
+    if(col[k]!==undefined){ s.value=col[k];
+      const lab=cc.querySelector('[data-v="'+k+'"]'); if(lab)lab.textContent=col[k]; }
+  });
+}
+function aiApply(){
+  curvesDirty=true;
+  syncBasicSliders();
+  if(typeof refreshAdvancedUI==='function')refreshAdvancedUI();
+  drawPreview(); Project.save();
+}
+function aiAutoEnhance(){
+  const c=S.selectedClip;
+  if(!c){ alert('Select a video clip first.'); return; }
+  const st=aiFrameStats();
+  if(!st){ alert('Frame not ready — press Play briefly, pause, then retry.'); return; }
+  const col=advDefaults(c.color=c.color||{});
+  pushUndo();
+  col.wb=aiGrayWB(st);
+  const p1=aiPct(st.hist,st.n,0.01), p99=aiPct(st.hist,st.n,0.99);
+  const span=Math.max(0.05,p99-p1);
+  const ev=Math.min(2,Math.max(-2,Math.log2(0.9/span)));
+  col.exposure=Math.round(ev*100)/100;
+  const gain=Math.pow(2,ev);
+  col.brightness=Math.round(0.5*(1-gain)*100);
+  col.contrast=Math.round(Math.min(30,Math.max(0,(0.75-span)*40)));
+  col.saturation=Math.round(st.sat<0.15?Math.min(30,(0.2-st.sat)*120):0);
+  col.temperature=0; col.tint=0;
+  aiApply();
+  aiStatus('✓ Enhanced — WB r'+col.wb.r.toFixed(2)+' b'+col.wb.b.toFixed(2)+
+    ' · EV '+(ev>=0?'+':'')+ev.toFixed(2)+' · frame sat '+st.sat.toFixed(2));
+}
+function aiToggleWbPick(){
+  if(!S.selectedClip){ alert('Select a video clip first.'); return; }
+  aiWbPick=!aiWbPick;
+  $('aiWbBtn').classList.toggle('on',aiWbPick);
+  $('preview').classList.toggle('pickwb',aiWbPick);
+  aiStatus(aiWbPick?'Tap something gray or white in the preview…':'WB picker off');
+}
+function aiWbSample(ev){
+  if(!aiWbPick)return;
+  const cv=$('preview'), r=cv.getBoundingClientRect(), v=previewVideo;
+  if(!v.videoWidth||v.readyState<2)return;
+  const fx=(ev.clientX-r.left)/r.width, fy=(ev.clientY-r.top)/r.height;
+  const tmp=document.createElement('canvas'); tmp.width=160; tmp.height=90;
+  const cx=tmp.getContext('2d',{willReadFrequently:true});
+  try{ cx.drawImage(v,0,0,160,90); }catch(e){ return; }
+  const px=Math.round(fx*160), py=Math.round(fy*90);
+  const gx=Math.min(155,Math.max(0,px-2)), gy=Math.min(85,Math.max(0,py-2));
+  let d; try{ d=cx.getImageData(gx,gy,5,5).data; }catch(e){ return; }
+  let sr=0,sg=0,sb=0,nn=0;
+  for(let i=0;i<d.length;i+=4){ sr+=d[i]; sg+=d[i+1]; sb+=d[i+2]; nn++; }
+  const R=sr/nn/255||1e-6, G=sg/nn/255||1e-6, B=sb/nn/255||1e-6;
+  const gray=(R+G+B)/3, cg=x=>Math.min(2,Math.max(0.5,x));
+  const col=advDefaults(S.selectedClip.color=S.selectedClip.color||{});
+  pushUndo();
+  col.wb={r:cg(gray/R),b:cg(gray/B)};
+  aiApply();
+  aiStatus('✓ WB from tapped patch RGB '+Math.round(R*255)+','+Math.round(G*255)+','+Math.round(B*255));
+  aiToggleWbPick();
+}
+function aiResetWB(){
+  const c=advColor(); if(!c)return;
+  pushUndo(); c.wb={r:1,b:1};
+  aiApply(); aiStatus('WB reset to neutral');
+}
+function aiLook(kind){
+  const c=S.selectedClip;
+  if(!c){ alert('Select a video clip first.'); return; }
+  const st=aiFrameStats();
+  if(!st){ alert('Frame not ready — press Play briefly, pause, then retry.'); return; }
+  const col=advDefaults(c.color=c.color||{});
+  pushUndo();
+  Object.assign(col,{
+    exposure:0,brightness:0,contrast:0,saturation:0,temperature:0,tint:0,highlights:0,shadows:0,
+    curves:{master:[[0,0],[1,1]],r:[[0,0],[1,1]],g:[[0,0],[1,1]],b:[[0,0],[1,1]]},
+    wheels:{sh:{h:0,s:0},mid:{h:0,s:0},hi:{h:0,s:0}},hsl:{h:0,s:0,l:0},
+    vignette:{a:0,s:50},sharpen:0,grain:0,wb:{r:1,b:1}});
+  let name='';
+  if(kind==='cine'){
+    const boost=st.sat<0.25?1:0.7;
+    col.wheels={sh:{h:0.52,s:0.38*boost},mid:{h:0,s:0},hi:{h:0.08,s:0.32*boost}};
+    col.curves.master=[[0,0],[0.22,0.16],[0.5,0.5],[0.78,0.84],[1,1]];
+    col.contrast=Math.round(12*boost);
+    col.saturation=Math.round(-8*boost);
+    col.vignette={a:18,s:60};
+    name='Cinematic';
+  }else if(kind==='vibrant'){
+    const headroom=Math.max(0.4,1-st.sat);
+    col.saturation=Math.round(28*headroom+8);
+    col.contrast=14;
+    col.curves.master=[[0,0],[0.3,0.32],[0.7,0.72],[1,1]];
+    col.hsl={h:0,s:8,l:0};
+    col.sharpen=12;
+    name='Vibrant';
+  }else{
+    col.wb=aiGrayWB(st);
+    col.curves.master=[[0,0],[0.25,0.26],[0.75,0.76],[1,1]];
+    col.contrast=8;
+    name='Clean';
+  }
+  aiApply();
+  aiStatus('✓ '+name+' look applied');
+}
+function initAIColor(){
+  if(!$('aiEnhanceBtn'))return;
+  $('aiEnhanceBtn').onclick=aiAutoEnhance;
+  $('aiWbBtn').onclick=aiToggleWbPick;
+  $('aiWbReset').onclick=aiResetWB;
+  $('aiLookCine').onclick=()=>aiLook('cine');
+  $('aiLookVibrant').onclick=()=>aiLook('vibrant');
+  $('aiLookClean').onclick=()=>aiLook('clean');
+  $('preview').addEventListener('click',aiWbSample);
+}
+
 /* ---------- Preview (WebGL) ---------- */
 let gl,texV,texL,texC,U={},glReady=false;
 let previewVideo=document.createElement('video');
@@ -929,6 +1290,7 @@ function initPreview(){
     'uniform float sharp;',
     'uniform vec2 texel;',
     'uniform float grain,time;',
+    'uniform vec2 uWB;',
     'vec3 applyLut(vec3 c){',
     ' vec3 s=clamp(c,0.,1.)*(lutN-1.); float b0=floor(s.b),b1=min(b0+1.,lutN-1.);',
     ' vec2 tsz=vec2(lutN,lutN*lutN);',
@@ -969,6 +1331,7 @@ function initPreview(){
     '  c=texture2D(vTex,_suv).rgb;',
     ' }',
     ' c*=uOpacity;',
+    ' c.r*=uWB.x; c.b*=uWB.y;',
     ' if(sharp>.001){',
     '  vec3 nb=texture2D(vTex,_suv+texel*vec2(1.,0.)).rgb+texture2D(vTex,_suv+texel*vec2(-1.,0.)).rgb',
     '        +texture2D(vTex,_suv+texel*vec2(0.,1.)).rgb+texture2D(vTex,_suv+texel*vec2(0.,-1.)).rgb;',
@@ -1012,12 +1375,13 @@ function initPreview(){
   gl.uniform1i(gl.getUniformLocation(pr,'lTex'),1);
   gl.uniform1i(gl.getUniformLocation(pr,'curveTex'),2);
   ['lutN','inten','useLut','expo','bright','cont','sat','temp','uScale','uRot','uOpacity','uOffset','uFlip','uCrop',
-   'curveTex','useCurves','wSh','wMid','wHi','hsl','vig','sharp','texel','grain','time'
+   'curveTex','useCurves','wSh','wMid','wHi','hsl','vig','sharp','texel','grain','time','uWB'
   ].forEach(n=>U[n]=gl.getUniformLocation(pr,n));
   gl.uniform1f(U.lutN,32); gl.uniform1f(U.inten,1); gl.uniform1f(U.useLut,0);
   gl.uniform1f(U.uScale,1); gl.uniform1f(U.uRot,0); gl.uniform1f(U.uOpacity,1);
   gl.uniform2f(U.uOffset,0,0); gl.uniform2f(U.uFlip,0,0);
   gl.uniform4f(U.uCrop,0,0,0,0);
+  gl.uniform2f(U.uWB,1,1);
   texC=mk();
   gl.uniform1f(U.useCurves,1);
   uploadCurves({curves:{master:[[0,0],[1,1]],r:[[0,0],[1,1]],g:[[0,0],[1,1]],b:[[0,0],[1,1]]}});
@@ -1045,6 +1409,7 @@ function drawPreview(){
   gl.uniform1f(U.expo,col.exposure||0); gl.uniform1f(U.bright,(col.brightness||0)/100);
   gl.uniform1f(U.cont,(col.contrast||0)/100); gl.uniform1f(U.sat,(col.saturation||0)/100);
   gl.uniform1f(U.temp,(col.temperature||0)/100);
+  const _wb=col.wb||{}; gl.uniform2f(U.uWB,_wb.r||1,_wb.b||1);
   const _T=getT(clip);
   gl.uniform1f(U.uScale,Math.max(0.05,_T.scale||1));
   gl.uniform1f(U.uRot,_T.rotation||0);
@@ -1124,14 +1489,18 @@ function importLutFile(f){
       cx.drawImage(tmp,0,Math.floor(lut.n*lut.n/2-lut.n/4),lut.n,lut.n/2,0,0,96,54);
       DB.put('luts',{name,text:r.result});
       renderLutGrid();
+      renderLutLibrary();
     }catch(e){alert('Invalid LUT: '+e.message)}
   };
   r.readAsText(f);
 }
 function renderLutGrid(){
   DB.all('luts').then(ls=>{
-    const g=$('lutGrid');
+    const g=$('lutGrid'); if(!g)return;
+    const taken=new Set(ls.map(l=>l.name));
+    const bis=builtinLuts().filter(b=>!taken.has(b.name));
     g.innerHTML='<div class="lutcard" data-lut=""><div style="font-size:1.5rem">🚫</div>None</div>'+
+      bis.map(b=>`<div class="lutcard" data-lut="${esc(b.name)}"><div style="font-size:1.5rem">✨</div>${esc(b.name.slice(0,14))}</div>`).join('')+
       ls.map(l=>`<div class="lutcard" data-lut="${esc(l.name)}"><div style="font-size:1.5rem">🎨</div>${esc(l.name.slice(0,14))}</div>`).join('');
     g.querySelectorAll('[data-lut]').forEach(c=>c.onclick=()=>{
       if(S.selectedClip){S.selectedClip.lut=c.dataset.lut||null; Project.save()}
@@ -1521,6 +1890,293 @@ function getActiveTransition(t){
   }
   return null;
 }
+
+/* ============================================================
+   MOBILE SHELL — PeekLUT-style Projects / LUTs / bottom sheets
+   ============================================================ */
+let lutCat='user', activeLutName='';
+let _builtins=null, projMenuId=null, toastT=null;
+const userLutCache={}; // name -> {n,data} parsed .cube (for library previews)
+
+function toast(msg){
+  const t=$('toast'); if(!t)return;
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ---------- Screen router ---------- */
+function showScreen(name){
+  S.screen=name;
+  $('screen-projects').classList.toggle('hidden',name!=='projects');
+  $('screen-luts').classList.toggle('hidden',name!=='luts');
+  $('home').style.display='none';
+  $('studio').style.display=name==='editor'?'block':'none';
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  if(name==='projects')renderProjects();
+  if(name==='luts'){renderLutLibrary();renderLutPreview(activeLutName||null);}
+  window.scrollTo(0,0);
+}
+
+/* ---------- Projects screen ---------- */
+function renderProjects(){
+  DB.all('projects').then(ps=>{
+    const grid=$('projGrid'), empty=$('projEmpty');
+    if(!grid)return;
+    ps.sort((a,b)=>b.modified-a.modified);
+    if(!ps.length){grid.innerHTML='';empty.classList.remove('hidden');return;}
+    empty.classList.add('hidden');
+    grid.innerHTML=ps.map((p,i)=>{
+      const ch=((p.name||'U').trim()[0]||'U').toUpperCase();
+      return `<div class="pcard" data-pid="${p.id}">
+        <div class="pthumb g${i%5}"><span>${esc(ch)}</span>
+          <button class="pcard-menu" data-menu="${p.id}" aria-label="Project options">&#8942;</button></div>
+        <div class="pname">${esc(p.name)}</div>
+        <div class="pdate">${new Date(p.modified).toLocaleDateString()}</div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.pcard').forEach(card=>{
+      const pid=card.dataset.pid;
+      let lpTimer=null, lpFired=false;
+      card.addEventListener('click',e=>{
+        if(e.target.closest('[data-menu]'))return;
+        if(lpFired){lpFired=false;return;}
+        openProjectCard(pid);
+      });
+      card.addEventListener('pointerdown',()=>{lpFired=false;lpTimer=setTimeout(()=>{lpTimer=null;lpFired=true;openProjMenu(pid);},550);});
+      ['pointerup','pointerleave','pointercancel','pointermove'].forEach(ev=>
+        card.addEventListener(ev,()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}}));
+    });
+    grid.querySelectorAll('[data-menu]').forEach(b=>
+      b.addEventListener('click',e=>{e.stopPropagation();openProjMenu(b.dataset.menu);}));
+  });
+}
+function openProjectCard(pid){
+  // Re-opening the current project must not wipe its timeline (openProject resets media)
+  if(S.project&&S.project.id===pid){showScreen('editor');return;}
+  openProject(pid);
+}
+function newProject(){
+  const name=prompt('Project name:','My Video');
+  if(name===null)return;
+  S.project=Project.create((name||'').trim()||'Untitled Project');
+  showStudio();
+}
+function openProjMenu(pid){
+  projMenuId=pid;
+  DB.all('projects').then(ps=>{
+    const p=ps.find(x=>x.id===pid);
+    $('projSheetName').textContent=p?p.name:'Project';
+  });
+  openSheet('projSheet');
+}
+function renameProject(){
+  const pid=projMenuId; closeSheets();
+  if(!pid)return;
+  DB.all('projects').then(ps=>{
+    const p=ps.find(x=>x.id===pid); if(!p)return;
+    const n=prompt('Rename project:',p.name);
+    if(n===null||!n.trim())return;
+    p.name=n.trim(); p.modified=Date.now();
+    DB.put('projects',p).then(()=>{
+      renderProjects();
+      if(S.project&&S.project.id===p.id){S.project.name=p.name;$('projName').textContent=p.name;}
+      toast('Renamed');
+    });
+  });
+}
+function deleteProject(){
+  const pid=projMenuId; closeSheets();
+  if(!pid||!confirm('Delete this project?'))return;
+  DB.del('projects',pid).then(()=>{
+    if(S.project&&S.project.id===pid){S.project=null;Project.cur=null;}
+    projMenuId=null; renderProjects(); toast('Project deleted');
+  });
+}
+
+/* ---------- Bottom sheets ---------- */
+function openSheet(id){
+  closeSheets();
+  $('sheetBackdrop').classList.remove('hidden');
+  const s=$(id); s.classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>s.classList.add('open')));
+}
+function closeSheets(){
+  const bd=$('sheetBackdrop'); if(bd)bd.classList.add('hidden');
+  document.querySelectorAll('.sheet.open').forEach(s=>{
+    s.classList.remove('open');
+    setTimeout(()=>s.classList.add('hidden'),300);
+  });
+  document.querySelectorAll('.sheet:not(.open)').forEach(s=>s.classList.add('hidden'));
+}
+function openMediaSheet(){
+  if(!S.project)S.project=Project.create('Untitled Project');
+  openSheet('mediaSheet');
+}
+
+/* ---------- Built-in LUTs (generated, registered with the engine) ---------- */
+function clamp01(v){return Math.min(1,Math.max(0,v));}
+function genLut(name,cat,fn){
+  const n=16, data=new Float32Array(n*n*n*3);
+  let i=0;
+  for(let b=0;b<n;b++)for(let g=0;g<n;g++)for(let r=0;r<n;r++){
+    const c=fn(r/(n-1),g/(n-1),b/(n-1));
+    data[i++]=clamp01(c[0]);data[i++]=clamp01(c[1]);data[i++]=clamp01(c[2]);
+  }
+  return {name,cat,lut:{n,data}};
+}
+function builtinLuts(){
+  if(_builtins)return _builtins;
+  _builtins=[
+    genLut('Teal & Orange','creative',(r,g,b)=>{const l=(r+g+b)/3,sh=1-Math.min(1,l*2.2),hi=Math.min(1,Math.max(0,(l-0.5)*2));return [r+0.05*hi-0.04*sh,g+0.01*hi+0.03*sh,b-0.03*hi+0.06*sh];}),
+    genLut('Golden Hour','creative',(r,g,b)=>[r*1.07+0.02,g*1.01,b*0.90]),
+    genLut('Noir','creative',(r,g,b)=>{let l=r*0.299+g*0.587+b*0.114;l=clamp01(l*1.06-0.03);return [l,l,l];}),
+    genLut('Cyberpunk','creative',(r,g,b)=>[r*1.04+0.02,g*0.92,b*1.10+0.03]),
+    genLut('Warm Vintage','creative',(r,g,b)=>[r*0.95+0.08,g*0.92+0.06,b*0.88+0.04]),
+    genLut('Vibrant Pop','creative',(r,g,b)=>{const l=(r+g+b)/3;return [l+(r-l)*1.28,l+(g-l)*1.28,l+(b-l)*1.28];})
+  ];
+  return _builtins;
+}
+function lutToCache(lut){
+  const n=lut.n, tex=new Uint8Array(n*n*n*4);
+  for(let i=0;i<n*n*n;i++){
+    tex[i*4]=clamp01(lut.data[i*3])*255;
+    tex[i*4+1]=clamp01(lut.data[i*3+1])*255;
+    tex[i*4+2]=clamp01(lut.data[i*3+2])*255;
+    tex[i*4+3]=255;
+  }
+  return {n,tex};
+}
+function sampleLut(lut,r,g,b){
+  const n=lut.n,d=lut.data;
+  const x=clamp01(r)*(n-1),y=clamp01(g)*(n-1),z=clamp01(b)*(n-1);
+  const x0=Math.floor(x),y0=Math.floor(y),z0=Math.floor(z);
+  const x1=Math.min(n-1,x0+1),y1=Math.min(n-1,y0+1),z1=Math.min(n-1,z0+1);
+  const fx=x-x0,fy=y-y0,fz=z-z0;
+  const at=(ix,iy,iz)=>{const o=((iz*n+iy)*n+ix)*3;return [d[o],d[o+1],d[o+2]];};
+  const c000=at(x0,y0,z0),c100=at(x1,y0,z0),c010=at(x0,y1,z0),c110=at(x1,y1,z0);
+  const c001=at(x0,y0,z1),c101=at(x1,y0,z1),c011=at(x0,y1,z1),c111=at(x1,y1,z1);
+  const L=(a,bb,t)=>a+(bb-a)*t;
+  return [0,1,2].map(ch=>{
+    const x00=L(c000[ch],c100[ch],fx),x10=L(c010[ch],c110[ch],fx);
+    const x01=L(c001[ch],c101[ch],fx),x11=L(c011[ch],c111[ch],fx);
+    return L(L(x00,x10,fy),L(x01,x11,fy),fz);
+  });
+}
+
+/* ---------- LUT library screen ---------- */
+function drawSampleBase(cx,W,H){
+  const bars=['#ff3b30','#ffcc00','#34c759','#0a84ff','#bf5af2','#ff9f0a'];
+  const bw=W/bars.length, bh=Math.floor(H*0.55);
+  bars.forEach((c,i)=>{cx.fillStyle=c;cx.fillRect(Math.floor(i*bw),0,Math.ceil(bw)+1,bh);});
+  for(let x=0;x<W;x++){const v=Math.round(x/W*255);cx.fillStyle='rgb('+v+','+v+','+v+')';cx.fillRect(x,bh,1,Math.floor(H*0.22));}
+  const gy=bh+Math.floor(H*0.22);
+  const gr=cx.createLinearGradient(0,gy,W,H);
+  gr.addColorStop(0,'#3a2c22');gr.addColorStop(1,'#c8916d');
+  cx.fillStyle=gr;cx.fillRect(0,gy,W,H-gy);
+  const cr=Math.min(W,H)*0.13;
+  cx.fillStyle='#c8916d';cx.beginPath();cx.arc(W*0.78,bh*0.5,cr,0,7);cx.fill();
+  cx.fillStyle='rgba(255,255,255,.92)';cx.font='bold '+Math.round(H*0.08)+'px sans-serif';
+  cx.textAlign='center';cx.fillText('SAMPLE',W*0.24,bh*0.55);
+}
+function getPreviewLut(name){
+  if(!name)return null;
+  const b=builtinLuts().find(x=>x.name===name);
+  if(b)return b.lut;
+  return userLutCache[name]||null;
+}
+function applyLutToCanvas(cx,W,H,lut){
+  const img=cx.getImageData(0,0,W,H),d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    const c=sampleLut(lut,d[i]/255,d[i+1]/255,d[i+2]/255);
+    d[i]=clamp01(c[0])*255;d[i+1]=clamp01(c[1])*255;d[i+2]=clamp01(c[2])*255;
+  }
+  cx.putImageData(img,0,0);
+}
+function renderLutPreview(name){
+  const cv=$('lutPrevCanvas'); if(!cv)return;
+  const cx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  drawSampleBase(cx,W,H);
+  const lut=getPreviewLut(name);
+  if(lut)applyLutToCanvas(cx,W,H,lut);
+  $('lutPrevName').textContent=name||'Original';
+}
+function renderLutLibrary(){
+  const grid=$('lutLibGrid'); if(!grid)return;
+  DB.all('luts').then(ls=>{
+    ls.forEach(l=>{if(!(l.name in userLutCache)){try{userLutCache[l.name]=parseCube(l.text);}catch(e){userLutCache[l.name]=null;}}});
+    const taken=new Set(ls.map(l=>l.name));
+    let items=[];
+    if(lutCat==='user')items=ls.map(l=>({name:l.name,label:l.name,icon:'\uD83C\uDFA8'}));
+    else if(lutCat==='creative')items=builtinLuts().filter(b=>!taken.has(b.name)).map(b=>({name:b.name,label:b.name,icon:'\u2728'}));
+    else items=[{name:'',label:'None',icon:'\uD83D\uDEAB'}];
+    if(!items.length){
+      grid.innerHTML='<p class="empty-note">'+(lutCat==='user'?'No LUTs yet \u2014 tap <b>+ Import .cube</b> or try the Creative tab.':'Nothing here yet.')+'</p>';
+      return;
+    }
+    grid.innerHTML=items.map(it=>
+      `<div class="liblut ${activeLutName===(it.name||'')?'active':''}" data-lname="${esc(it.name)}">`+
+      `<canvas width="120" height="68"></canvas>`+
+      `<div class="lname">${it.icon} ${esc((it.label||it.name).slice(0,18))}</div></div>`
+    ).join('');
+    grid.querySelectorAll('.liblut').forEach(card=>{
+      const cv=card.querySelector('canvas'),cx=cv.getContext('2d');
+      drawSampleBase(cx,cv.width,cv.height);
+      const lut=getPreviewLut(card.dataset.lname||null);
+      if(lut)applyLutToCanvas(cx,cv.width,cv.height,lut);
+      card.addEventListener('click',()=>selectLibraryLut(card.dataset.lname));
+    });
+  });
+}
+function selectLibraryLut(name){
+  activeLutName=name||'';
+  renderLutPreview(name||null);
+  document.querySelectorAll('#lutLibGrid .liblut').forEach(c=>
+    c.classList.toggle('active',c.dataset.lname===(name||'')));
+  if(S.selectedClip){
+    S.selectedClip.lut=name||null;
+    Project.save(); drawPreview();
+    toast('LUT applied to selected clip');
+  }else if(S.project){
+    toast('Select a clip in the editor to apply');
+  }else{
+    toast('Open a project to apply LUTs');
+  }
+}
+
+/* ---------- Shell init ---------- */
+function initMobileShell(){
+  document.querySelectorAll('.tabbtn').forEach(b=>
+    b.addEventListener('click',()=>showScreen(b.dataset.tab)));
+  $('newProjBtn2').addEventListener('click',newProject);
+  $('emptyNewBtn').addEventListener('click',newProject);
+  $('projRecordBtn').addEventListener('click',()=>Recorder.open());
+  $('projSheetCancel').addEventListener('click',closeSheets);
+  $('sheetBackdrop').addEventListener('click',closeSheets);
+  $('projRename').addEventListener('click',renameProject);
+  $('projDelete').addEventListener('click',deleteProject);
+  $('msCancel').addEventListener('click',closeSheets);
+  $('msVideo').addEventListener('click',()=>$('msVideoInput').click());
+  $('msImage').addEventListener('click',()=>$('msImageInput').click());
+  $('msFiles').addEventListener('click',()=>$('msFilesInput').click());
+  const imp=e=>{closeSheets();if(e.target.files&&e.target.files.length)handleFiles(e.target.files);e.target.value='';};
+  $('msVideoInput').addEventListener('change',imp);
+  $('msImageInput').addEventListener('change',imp);
+  $('msFilesInput').addEventListener('change',imp);
+  $('libImportLut').addEventListener('click',()=>$('libLutInput').click());
+  $('libLutInput').addEventListener('change',e=>{const f=e.target.files[0];if(f)importLutFile(f);e.target.value='';});
+  document.querySelectorAll('#lutPills .pill').forEach(p=>p.addEventListener('click',()=>{
+    document.querySelectorAll('#lutPills .pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');lutCat=p.dataset.cat;renderLutLibrary();
+  }));
+  // Register built-in LUTs with the grading engine (skip names the user already imported)
+  DB.all('luts').then(ls=>{
+    const taken=new Set(ls.map(l=>l.name));
+    builtinLuts().forEach(b=>{if(!taken.has(b.name))lutCache.set(b.name,lutToCache(b.lut));});
+    renderLutGrid();
+  });
+  showScreen('projects');
+}
+
 </script>
 </body>
 </html>
