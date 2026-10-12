@@ -363,9 +363,20 @@ async function doExport(m,res,fps,brMbps){
     rec.stop();await done;
     const ext=mime.includes('mp4')?'mp4':'webm';
     const blob=new Blob(ch,{type:mime});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download='reshi-'+Date.now()+'.'+ext;a.click();
-    m.remove();err('Exported ✓ ('+ext.toUpperCase()+')');
+    const url=URL.createObjectURL(blob);
+    m.remove();
+    // Show result with video player (mobile: long-press to save)
+    const rm=document.createElement('div');
+    rm.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+    rm.innerHTML='<div style="background:#171717;border-radius:18px;padding:20px;width:100%;max-width:400px">'
+      +'<h3 style="margin-bottom:12px">✓ Exported ('+ext.toUpperCase()+')</h3>'
+      +'<video src="'+url+'" controls playsinline style="width:100%;border-radius:10px;background:#000"></video>'
+      +'<p style="color:#aaa;font-size:.8rem;margin:12px 0;line-height:1.5">📱 <b>iPhone:</b> long-press video → Save to Photos<br>🤖 <b>Android:</b> tap ⋮ → Download</p>'
+      +'<a href="'+url+'" download="reshi-'+Date.now()+'.'+ext+'" style="display:block;text-align:center;padding:14px;background:#E2A03F;color:#000;border-radius:12px;font-weight:700;text-decoration:none;margin-bottom:10px">⬇ Try Download</a>'
+      +'<button id="rmX" style="width:100%;padding:12px;background:#222;color:#fff;border:none;border-radius:12px">Close</button></div>';
+    document.body.appendChild(rm);
+    rm.querySelector('#rmX').onclick=()=>{rm.remove();URL.revokeObjectURL(url);};
+    rm.onclick=e=>{if(e.target===rm){rm.remove();}};
   }catch(e){err('Export failed: '+e.message);goBtn.disabled=false;goBtn.textContent='Export Video';}
 }
 
