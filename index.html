@@ -122,7 +122,7 @@ function initGL(){
 uniform sampler2D uV;uniform sampler2D uL;uniform float uS;uniform float uA;
 vec3 fetchLUT(float r,float g,float b){
  float sz=uS;
- vec2 uv=vec2((b*sz+r+0.5)/(sz*sz),(g+0.5)/sz);
+ vec2 uv=vec2((g*sz+r+0.5)/(sz*sz),(b+0.5)/sz);
  return texture2D(uL,uv).rgb;
 }
 vec3 lut(vec3 c){
