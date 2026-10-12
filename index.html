@@ -133,7 +133,7 @@ body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;b
 <body>
 <!-- HOME -->
 <div id="home" class="wrap">
-  <div class="hd"><h1>✂️ Reshi Studio</h1><div class="sp"></div><button class="gopro" onclick="alert('Pro coming soon!')">✨ Go Pro</button></div>
+  <div class="hd"><h1>✂️ Reshi Studio</h1><div class="sp"></div></div>
   <p class="sub">21 looks · record 4K 60 HDR · smooth slow motion</p>
   <div id="contCard" class="hidden"><div class="ccard" id="contBg"><div class="tx"><div class="k">CONTINUE EDITING</div><h2 id="contName"></h2><p id="contMeta"></p></div><button class="cplay" id="contPlay">▶</button></div></div>
   <div class="hbtns"><button class="rec" id="recBtn">🔴 Record footage</button><button class="newp" id="newBtn">＋ New project</button></div>
@@ -561,17 +561,21 @@ const show=n=>{const el=$('csBody');
 if(n==='Looks')showLooks();else if(n==='Film')showFilm();else if(n==='Grade')showGrade();else if(n==='Warper')showWarper();else if(n==='Relight')showRelight();
 else if(n==='Volume'){el.innerHTML=sRow('Volume','aVol',0,200,1,Math.round((S.selectedClip?S.selectedClip.volume||1:1)*100),v=>v+'%');
 $('aVol').oninput=e=>{if(S.selectedClip){S.selectedClip.volume=e.target.value/100;pushU()}};$('aVol').onchange=()=>Project.save()}
-else el.innerHTML='<p class="help">Coming soon in this build.</p>'};
+else if(n==='Text'){el.innerHTML=sRow('Size','tSize',12,72,1,32,v=>v+'px')+sRow('Y Position','tY',0,100,1,50,v=>v+'%')+'<input id="tTxt" placeholder="Enter text" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;margin:8px 0"/><button class="btn" id="tAdd" style="width:100%">Add Text</button>';
+$('tAdd').onclick=()=>{const c=S.selectedClip;if(!c){alert('Select a clip first');return}pushU();c.text=c.text||[];c.text.push({txt:$('tTxt').value||'Text',size:+$('tSize').value,x:50,y:+$('tY').value,color:'#fff'});drawPreview();Project.save();alert('Text added')}} 
+else if(n==='Overlay'){el.innerHTML='<p class="help">Overlay: import an image via + New Project > Add Media, then it will appear as an overlay track in a future update. For now, use Text for titles.</p>'} 
+else el.innerHTML='<p class="help">Select a clip to edit.</p>'};
 b.querySelectorAll('[data-cs]').forEach(x=>x.onclick=()=>{b.querySelectorAll('[data-cs]').forEach(y=>y.classList.remove('on'));x.classList.add('on');show(x.dataset.cs)});
 show((names[t]||[])[0])}
 /* ============ edit tools ============ */
 $('editTools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.e;
 if(k==='split')splitClip();else if(k==='speed'){const c=S.selectedClip;if(!c)return;const v=prompt('Speed (0.25 - 4):',c.speed||1);if(v){pushUndo();c.speed=clamp(+v,.25,4);renderAll();Project.save()}}
-else if(k==='freeze'){alert('Freeze: not in this build')}
-else if(k==='rev'){alert('Reverse: not in this build')}
-else if(k==='tr'){alert('Transform: use Looks > Grade wheels for color; crop/rotate in a future build')}
+else if(k==='freeze'){const c=S.selectedClip;if(!c)return;pushU();c.speed=0.01;renderAll();Project.save();alert('Frozen (speed set to 0.01x)')}
+else if(k==='rev'){alert('Reverse playback is not supported in browser exports. Use Speed < 1 for slow motion instead.')}
+else if(k==='tr'){const c=S.selectedClip;if(!c)return;const r=prompt('Rotation (degrees, 0-360):',(c.transform&&c.transform.rotation)||0);if(r!==null){pushU();c.transform=c.transform||{};c.transform.rotation=clamp(+r,0,360);drawPreview();Project.save()}}
 else if(k==='stab'){const c=col();pushU();c.sharpen=(c.sharpen||0)+10;drawPreview();Project.save()}
-else alert('Coming soon')});
+else if(k==='more'){alert('More: Duplicate (long-press clip), Delete (select + Delete button) are in the timeline.')}
+});
 /* ============ export ============ */
 let expCancel=false;
 $('expBtn').onclick=()=>{const r=$('sheetRoot');
