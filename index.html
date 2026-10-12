@@ -90,8 +90,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <button id="cmpBtn" style="width:100%;padding:12px;margin-top:8px;background:#222;color:#fff;border-radius:10px;font-weight:600">👁 Hold to Compare Original</button>
   </div>
   <div class="actions">
-    <button class="bk2" id="back2">‹ Back</button>
-    <button class="dl" id="dlBtn">⬇ Download</button>
+    <button class="bk2" id="back2" style="flex:1">‹ Back</button>
   </div>
 </div>
 
@@ -286,17 +285,64 @@ $('str').oninput=e=>{strength=+e.target.value;$('strv').textContent=strength;};
 })();
 
 /* ---------- export ---------- */
-$('expBtn').onclick=doExport;$('dlBtn').onclick=doExport;
-async function doExport(){
+$('expBtn').onclick=openExport;
+function openExport(){
   const v=$('v');if(!v.src){err('Import a video first');return;}
-  const pr=$('prog');pr.style.display='block';const bar=pr.querySelector('i');
-  err('Rendering…');
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center';
+  m.innerHTML='<div style="background:#171717;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px;max-height:80vh;overflow-y:auto">'
+  +'<h3 style="margin-bottom:16px">Export</h3>'
+  +'<div style="margin-bottom:14px"><div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Resolution</div>'
+  +'<div style="display:flex;gap:8px" id="exRes">'
+  +'<button data-r="1080" style="flex:1;padding:12px;background:#E2A03F;color:#000;border-radius:10px;font-weight:700">1080p</button>'
+  +'<button data-r="2k" style="flex:1;padding:12px;background:#222;color:#fff;border-radius:10px">2K</button>'
+  +'<button data-r="4k" style="flex:1;padding:12px;background:#222;color:#fff;border-radius:10px">4K</button>'
+  +'</div></div>'
+  +'<div style="margin-bottom:14px"><div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Frame Rate: <span id="exFpsV">30</span> fps</div>'
+  +'<input type="range" id="exFps" min="10" max="60" value="30" style="width:100%"></div>'
+  +'<div style="margin-bottom:14px"><div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Bitrate</div>'
+  +'<div style="display:flex;gap:8px" id="exBr">'
+  +'<button data-b="6" style="flex:1;padding:12px;background:#222;color:#fff;border-radius:10px">Low</button>'
+  +'<button data-b="12" style="flex:1;padding:12px;background:#E2A03F;color:#000;border-radius:10px;font-weight:700">Med</button>'
+  +'<button data-b="24" style="flex:1;padding:12px;background:#222;color:#fff;border-radius:10px">High</button>'
+  +'</div></div>'
+  +'<div style="margin-bottom:16px"><div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Format</div>'
+  +'<div style="display:flex;gap:8px"><button style="flex:1;padding:12px;background:#E2A03F;color:#000;border-radius:10px;font-weight:700">MP4</button></div>'
+  +'<div style="font-size:.7rem;color:#666;margin-top:6px">MP4 if supported, else WebM</div></div>'
+  +'<div class="prog" id="exProg" style="display:none;margin:10px 0"><i style="display:block;height:100%;background:#E2A03F;width:0%"></i></div>'
+  +'<button id="exGo" style="width:100%;padding:16px;background:#E2A03F;color:#000;border:none;border-radius:14px;font-weight:700;font-size:1rem;margin-bottom:10px">Export Video</button>'
+  +'<button id="exX" style="width:100%;padding:14px;background:#222;color:#fff;border:none;border-radius:14px">Cancel</button>'
+  +'</div>';
+  document.body.appendChild(m);
+  let res='1080',br=12;
+  m.querySelector('#exFps').oninput=e=>m.querySelector('#exFpsV').textContent=e.target.value;
+  m.querySelectorAll('#exRes button').forEach(b=>b.onclick=()=>{
+    m.querySelectorAll('#exRes button').forEach(x=>{x.style.background='#222';x.style.color='#fff';x.style.fontWeight='400';});
+    b.style.background='#E2A03F';b.style.color='#000';b.style.fontWeight='700';res=b.dataset.r;});
+  m.querySelectorAll('#exBr button').forEach(b=>b.onclick=()=>{
+    m.querySelectorAll('#exBr button').forEach(x=>{x.style.background='#222';x.style.color='#fff';x.style.fontWeight='400';});
+    b.style.background='#E2A03F';b.style.color='#000';b.style.fontWeight='700';br=+b.dataset.b;});
+  m.querySelector('#exX').onclick=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  m.querySelector('#exGo').onclick=()=>doExport(m,res,+m.querySelector('#exFps').value,br);
+}
+async function doExport(m,res,fps,brMbps){
+  const v=$('v');if(!v.src){err('Import a video first');return;}
+  const pr=m.querySelector('#exProg');pr.style.display='block';const bar=pr.querySelector('i');
+  const goBtn=m.querySelector('#exGo');goBtn.disabled=true;goBtn.textContent='Rendering…';
   try{
-    const W=v.videoWidth||720,H=v.videoHeight||1280;
+    let W,H;
+    if(res==='4k'){W=3840;H=2160;}else if(res==='2k'){W=2560;H=1440;}else{W=1920;H=1080;}
+    // keep aspect from source
+    const sw=v.videoWidth||16,sh=v.videoHeight||9;
+    if(sw>sh){H=Math.round(W*sh/sw);}else{W=Math.round(H*sw/sh);}
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;
     const cx=cv.getContext('2d');
-    const stream=cv.captureStream(30);
-    const rec=new MediaRecorder(stream,{mimeType:'video/webm'});
+    const stream=cv.captureStream(fps);
+    // try MP4, fallback to WebM
+    let mime='video/webm';
+    if(MediaRecorder.isTypeSupported('video/mp4'))mime='video/mp4';
+    const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:brMbps*1e6});
     const ch=[];rec.ondataavailable=e=>{if(e.data.size)ch.push(e.data);};
     const done=new Promise(r=>rec.onstop=r);
     rec.start();
@@ -312,14 +358,15 @@ async function doExport(){
         if(srcCv&&srcCv.width>0)cx.drawImage(srcCv,0,0,W,H);
         else if(v.videoWidth>0)cx.drawImage(v,0,0,W,H);
         if(v.ended||Date.now()-t0>dur*1000+1500){clearInterval(iv);res();}
-      },50);
+      },Math.max(16,1000/fps));
     });
     rec.stop();await done;
-    const blob=new Blob(ch,{type:'video/webm'});
+    const ext=mime.includes('mp4')?'mp4':'webm';
+    const blob=new Blob(ch,{type:mime});
     const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download='reshi-'+Date.now()+'.webm';a.click();
-    err('Done ✓');pr.style.display='none';
-  }catch(e){err('Export failed');pr.style.display='none';}
+    a.href=URL.createObjectURL(blob);a.download='reshi-'+Date.now()+'.'+ext;a.click();
+    m.remove();err('Exported ✓ ('+ext.toUpperCase()+')');
+  }catch(e){err('Export failed: '+e.message);goBtn.disabled=false;goBtn.textContent='Export Video';}
 }
 
 /* init */
